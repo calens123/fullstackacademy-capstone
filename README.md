@@ -19,6 +19,8 @@
 
 ---
 
+![schema](https://github.com/user-attachments/assets/d337c821-2318-44de-b68e-c3a6c365d7ee)
+
 # Project Plan
 
 Day 1-2: Planning & Setup
