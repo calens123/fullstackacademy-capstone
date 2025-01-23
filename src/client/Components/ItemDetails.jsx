@@ -11,6 +11,7 @@ const ItemDetails = ({ isAuthenticated }) => {
   useEffect(() => {
     const fetchItem = async () => {
       try {
+        // Fetch item details
         const itemResponse = await fetch(`/api/items/${id}`);
         if (!itemResponse.ok) {
           throw new Error("Failed to fetch item");
@@ -18,6 +19,7 @@ const ItemDetails = ({ isAuthenticated }) => {
         const itemData = await itemResponse.json();
         setItem(itemData);
 
+        // Fetch item reviews
         const reviewsResponse = await fetch(`/api/items/${id}/reviews`);
         if (!reviewsResponse.ok) {
           throw new Error("Failed to fetch reviews");
@@ -25,6 +27,7 @@ const ItemDetails = ({ isAuthenticated }) => {
         const reviewsData = await reviewsResponse.json();
         setReviews(reviewsData);
       } catch (err) {
+        // Log error to console
         console.error("Error fetching item details:", err);
       }
     };

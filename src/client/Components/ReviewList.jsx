@@ -14,6 +14,9 @@ const ReviewList = ({ reviews, setReviews, itemId, isAuthenticated }) => {
       const response = await fetch(
         `/api/items/${itemId}/reviews/${reviewId}/comments`
       );
+      if (!response.ok) {
+        throw new Error("Failed to fetch comments");
+      }
       const commentsData = await response.json();
       setComments((prev) => ({ ...prev, [reviewId]: commentsData }));
     } catch (err) {
@@ -40,7 +43,8 @@ const ReviewList = ({ reviews, setReviews, itemId, isAuthenticated }) => {
       });
 
       if (!response.ok) {
-        console.error("Error editing review:", await response.json());
+        const errorData = await response.json();
+        console.error("Error editing review:", errorData);
         return;
       }
 
@@ -63,12 +67,19 @@ const ReviewList = ({ reviews, setReviews, itemId, isAuthenticated }) => {
     }
 
     try {
-      await fetch(`/api/items/${itemId}/reviews/${reviewId}`, {
+      const response = await fetch(`/api/items/${itemId}/reviews/${reviewId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error deleting review:", errorData);
+        return;
+      }
+
       setReviews((prev) => prev.filter((review) => review.id !== reviewId));
     } catch (err) {
       console.error("Error deleting review:", err);

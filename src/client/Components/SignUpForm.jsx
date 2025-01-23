@@ -20,6 +20,7 @@ const SignUpForm = () => {
       if (!response.ok) {
         const errorData = await response.json();
         setError(errorData.error || "Sign-up failed");
+        console.error("Sign-up failed:", errorData);
         return;
       }
 
@@ -27,6 +28,7 @@ const SignUpForm = () => {
       sessionStorage.setItem("token", token); // Store JWT in sessionStorage
       alert("Sign-up successful! You're now logged in.");
     } catch (err) {
+      console.error("Error during sign-up:", err);
       setError("An error occurred. Please try again.");
     }
   };

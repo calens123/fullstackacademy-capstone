@@ -14,8 +14,10 @@ router.get("/test", async (req, res, next) => {
 // Middleware: Verify Token
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader)
+  if (!authHeader) {
+    console.error("Authorization header missing");
     return res.status(401).send({ error: "Authorization required" });
+  }
 
   const token = authHeader.split(" ")[1];
   try {
@@ -23,6 +25,7 @@ const verifyToken = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (err) {
+    console.error("Invalid token", err);
     res.status(403).send({ error: "Invalid token" });
   }
 };
@@ -54,6 +57,7 @@ router.post("/auth/signup", async (req, res, next) => {
     );
     res.status(201).send({ token, user });
   } catch (err) {
+    console.error("Error during sign-up", err);
     next(err);
   }
 });
@@ -68,6 +72,7 @@ router.post("/auth/login", async (req, res, next) => {
     } = await client.query("SELECT * FROM users WHERE email = $1;", [email]);
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
+      console.error("Invalid email or password");
       return res.status(401).send({ error: "Invalid email or password" });
     }
 
@@ -80,6 +85,7 @@ router.post("/auth/login", async (req, res, next) => {
       user: { id: user.id, username: user.username, email: user.email },
     });
   } catch (err) {
+    console.error("Error during login", err);
     next(err);
   }
 });
@@ -90,6 +96,7 @@ router.get("/items", async (req, res, next) => {
     const { rows: items } = await client.query("SELECT * FROM items");
     res.send(items);
   } catch (err) {
+    console.error("Error fetching items", err);
     next(err);
   }
 });
@@ -102,10 +109,12 @@ router.get("/items/:id", async (req, res, next) => {
       rows: [item],
     } = await client.query("SELECT * FROM items WHERE id = $1", [id]);
     if (!item) {
+      console.error("Item not found");
       return res.status(404).send({ error: "Item not found" });
     }
     res.send(item);
   } catch (err) {
+    console.error("Error fetching item", err);
     next(err);
   }
 });
@@ -120,6 +129,7 @@ router.get("/items/:id/reviews", async (req, res, next) => {
     );
     res.send(reviews);
   } catch (err) {
+    console.error("Error fetching reviews", err);
     next(err);
   }
 });
@@ -143,6 +153,7 @@ router.post("/items/:itemId/reviews", verifyToken, async (req, res, next) => {
     );
     res.status(201).send(review);
   } catch (err) {
+    console.error("Error adding review", err);
     next(err);
   }
 });
@@ -169,13 +180,16 @@ router.put(
         [rating, review_text, reviewId, userId]
       );
 
-      if (!review)
+      if (!review) {
+        console.error("Not authorized to edit this review");
         return res
           .status(403)
           .send({ error: "Not authorized to edit this review" });
+      }
 
       res.send(review);
     } catch (err) {
+      console.error("Error editing review", err);
       next(err);
     }
   }
@@ -195,13 +209,16 @@ router.delete(
         [reviewId, userId]
       );
 
-      if (rowCount === 0)
+      if (rowCount === 0) {
+        console.error("Not authorized to delete this review");
         return res
           .status(403)
           .send({ error: "Not authorized to delete this review" });
+      }
 
       res.status(204).send(); // No content
     } catch (err) {
+      console.error("Error deleting review", err);
       next(err);
     }
   }
@@ -219,6 +236,7 @@ router.get(
       );
       res.send(comments);
     } catch (err) {
+      console.error("Error fetching comments", err);
       next(err);
     }
   }
@@ -246,6 +264,7 @@ router.post(
       );
       res.status(201).send(comment);
     } catch (err) {
+      console.error("Error adding comment", err);
       next(err);
     }
   }
@@ -273,13 +292,16 @@ router.put(
         [comment_text, commentId, userId]
       );
 
-      if (!comment)
+      if (!comment) {
+        console.error("Not authorized to edit this comment");
         return res
           .status(403)
           .send({ error: "Not authorized to edit this comment" });
+      }
 
       res.send(comment);
     } catch (err) {
+      console.error("Error editing comment", err);
       next(err);
     }
   }
@@ -299,13 +321,16 @@ router.delete(
         [commentId, userId]
       );
 
-      if (rowCount === 0)
+      if (rowCount === 0) {
+        console.error("Not authorized to delete this comment");
         return res
           .status(403)
           .send({ error: "Not authorized to delete this comment" });
+      }
 
       res.status(204).send(); // No content
     } catch (err) {
+      console.error("Error deleting comment", err);
       next(err);
     }
   }

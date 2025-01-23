@@ -27,7 +27,9 @@ const CommentList = ({ reviewId, comments, setComments, itemId }) => {
       );
 
       if (!response.ok) {
-        console.error("Error adding comment:", await response.json());
+        const errorData = await response.json();
+        console.error("Error adding comment:", errorData);
+        alert(`Error: ${errorData.message || "Failed to add comment"}`);
         return;
       }
 
@@ -39,6 +41,7 @@ const CommentList = ({ reviewId, comments, setComments, itemId }) => {
       setNewComment(""); // Clear the input field after successful submission
     } catch (err) {
       console.error("Error adding comment:", err);
+      alert("An unexpected error occurred. Please try again later.");
     }
   };
 

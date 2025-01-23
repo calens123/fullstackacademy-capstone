@@ -16,6 +16,7 @@ const LoginForm = () => {
       if (!response.ok) {
         const errorData = await response.json();
         setError(errorData.error || "Login failed");
+        console.error("Login failed:", errorData);
         return;
       }
 
@@ -23,6 +24,7 @@ const LoginForm = () => {
       sessionStorage.setItem("token", token); // Store JWT in sessionStorage
       alert("Login successful!");
     } catch (err) {
+      console.error("Error during login:", err);
       setError("An error occurred. Please try again.");
     }
   };

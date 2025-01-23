@@ -24,7 +24,9 @@ const ReviewForm = ({ itemId, setReviews }) => {
       });
 
       if (!response.ok) {
-        console.error("Error adding review:", await response.json());
+        const errorData = await response.json();
+        console.error("Error adding review:", errorData);
+        alert(`Error: ${errorData.message || "Failed to add review"}`);
         return;
       }
 
@@ -33,6 +35,7 @@ const ReviewForm = ({ itemId, setReviews }) => {
       setNewReview({ rating: "", review_text: "" }); // Reset the form
     } catch (err) {
       console.error("Error adding review:", err);
+      alert("An unexpected error occurred. Please try again later.");
     }
   };
 
