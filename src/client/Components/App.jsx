@@ -3,11 +3,22 @@ import { Link, Routes, Route } from "react-router-dom";
 import Foo from "./Foo";
 import Bar from "./Bar";
 import ItemDetails from "./ItemDetails";
+import SignUpForm from "./SignUpForm";
+import LoginForm from "./LoginForm";
 
 const App = () => {
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true); // State for loading
-  const [error, setError] = useState(null); // State for error
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!sessionStorage.getItem("token")
+  );
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("token");
+    setIsAuthenticated(false);
+    alert("You have been logged out.");
+  };
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -19,9 +30,9 @@ const App = () => {
         const data = await response.json();
         setItems(data);
       } catch (err) {
-        setError(err.message); // Set error state
+        setError(err.message);
       } finally {
-        setLoading(false); // Stop loading
+        setLoading(false);
       }
     };
 
@@ -29,11 +40,11 @@ const App = () => {
   }, []);
 
   if (loading) {
-    return <p>Loading items...</p>; // Show while loading
+    return <p>Loading items...</p>;
   }
 
   if (error) {
-    return <p>Error fetching items: {error}</p>; // Show if error occurs
+    return <p>Error fetching items: {error}</p>;
   }
 
   return (
@@ -42,6 +53,16 @@ const App = () => {
       <nav>
         <Link to="/foo">Foo</Link>
         <Link to="/bar">Bar</Link>
+        {isAuthenticated ? (
+          <>
+            <button onClick={handleLogout}>Log Out</button>
+          </>
+        ) : (
+          <>
+            <Link to="/signup">Sign Up</Link>
+            <Link to="/login">Log In</Link>
+          </>
+        )}
       </nav>
       <h2>Items</h2>
       <ul>
@@ -54,11 +75,15 @@ const App = () => {
           </li>
         ))}
       </ul>
-
       <Routes>
         <Route path="/foo" element={<Foo />} />
         <Route path="/bar" element={<Bar />} />
-        <Route path="/items/:id" element={<ItemDetails />} />
+        <Route
+          path="/items/:id"
+          element={<ItemDetails isAuthenticated={isAuthenticated} />}
+        />
+        <Route path="/signup" element={<SignUpForm />} />
+        <Route path="/login" element={<LoginForm />} />
       </Routes>
     </div>
   );

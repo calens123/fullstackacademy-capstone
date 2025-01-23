@@ -5,17 +5,31 @@ const ReviewForm = ({ itemId, setReviews }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const token = sessionStorage.getItem("token");
+
+    if (!token) {
+      alert("You must be logged in to submit a review.");
+      return;
+    }
+
     try {
       const response = await fetch(`/api/items/${itemId}/reviews`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: 1, // Replace with the logged-in user's ID when authentication is implemented
-          ...newReview,
-        }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newReview),
       });
+
+      if (!response.ok) {
+        console.error("Error adding review:", await response.json());
+        return;
+      }
+
       const createdReview = await response.json();
-      setReviews((prev) => [...prev, createdReview]); // Add the new review to the existing reviews
+      setReviews((prev) => [...prev, createdReview]); // Append the new review to the existing reviews
       setNewReview({ rating: "", review_text: "" }); // Reset the form
     } catch (err) {
       console.error("Error adding review:", err);

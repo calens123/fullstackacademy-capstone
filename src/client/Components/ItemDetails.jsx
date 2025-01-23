@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import ReviewList from "./ReviewList";
 import ReviewForm from "./ReviewForm";
 
-const ItemDetails = () => {
+const ItemDetails = ({ isAuthenticated }) => {
   const { id } = useParams();
   const [item, setItem] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -32,20 +32,24 @@ const ItemDetails = () => {
     fetchItem();
   }, [id]);
 
+  if (!item) {
+    return <p>Loading item details...</p>;
+  }
+
   return (
     <div>
-      {item ? (
-        <>
-          <h2>{item.name}</h2>
-          <p>{item.description}</p>
-          {item.image_url && <img src={item.image_url} alt={item.name} />}
-          <p>Average Rating: {item.average_rating}</p>
-          <ReviewList reviews={reviews} setReviews={setReviews} itemId={id} />
-          <ReviewForm itemId={id} setReviews={setReviews} />
-        </>
-      ) : (
-        <p>Loading item details...</p>
-      )}
+      <h2>{item.name}</h2>
+      <p>{item.description}</p>
+      {item.image_url && <img src={item.image_url} alt={item.name} />}
+      <p>Average Rating: {item.average_rating}</p>
+
+      <ReviewList
+        reviews={reviews}
+        setReviews={setReviews}
+        itemId={id}
+        isAuthenticated={isAuthenticated}
+      />
+      {isAuthenticated && <ReviewForm itemId={id} setReviews={setReviews} />}
     </div>
   );
 };

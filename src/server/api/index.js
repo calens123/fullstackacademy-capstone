@@ -231,17 +231,17 @@ router.post(
   async (req, res, next) => {
     const { reviewId } = req.params;
     const { comment_text } = req.body;
-    const userId = req.user.id;
+    const userId = req.user.id; // Extracted from the JWT
 
     try {
       const {
         rows: [comment],
       } = await client.query(
         `
-      INSERT INTO comments (review_id, user_id, comment_text)
-      VALUES ($1, $2, $3)
-      RETURNING *;
-      `,
+        INSERT INTO comments (review_id, user_id, comment_text)
+        VALUES ($1, $2, $3)
+        RETURNING *;
+        `,
         [reviewId, userId, comment_text]
       );
       res.status(201).send(comment);
