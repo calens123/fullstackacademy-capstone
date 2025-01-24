@@ -1,39 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router-dom"; // Import useParams
 import ReviewList from "./ReviewList";
 import ReviewForm from "./ReviewForm";
 
 const ItemDetails = ({ isAuthenticated }) => {
-  const { id } = useParams();
+  const { id } = useParams(); // Extract id from the route parameters
   const [item, setItem] = useState(null);
   const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
-    const fetchItem = async () => {
+    const fetchItemAndReviews = async () => {
       try {
-        // Fetch item details
         const itemResponse = await fetch(`/api/items/${id}`);
-        if (!itemResponse.ok) {
-          throw new Error("Failed to fetch item");
-        }
         const itemData = await itemResponse.json();
         setItem(itemData);
 
-        // Fetch item reviews
         const reviewsResponse = await fetch(`/api/items/${id}/reviews`);
-        if (!reviewsResponse.ok) {
-          throw new Error("Failed to fetch reviews");
-        }
         const reviewsData = await reviewsResponse.json();
         setReviews(reviewsData);
       } catch (err) {
-        // Log error to console
-        console.error("Error fetching item details:", err);
+        console.error("Error fetching item details and reviews:", err);
       }
     };
 
-    fetchItem();
-  }, [id]);
+    fetchItemAndReviews();
+  }, [id]); // Include id in the dependency array
 
   if (!item) {
     return <p>Loading item details...</p>;
@@ -46,13 +37,17 @@ const ItemDetails = ({ isAuthenticated }) => {
       {item.image_url && <img src={item.image_url} alt={item.name} />}
       <p>Average Rating: {item.average_rating}</p>
 
+      <h3>Reviews</h3>
       <ReviewList
         reviews={reviews}
         setReviews={setReviews}
-        itemId={id}
+        itemId={item.id}
         isAuthenticated={isAuthenticated}
       />
-      {isAuthenticated && <ReviewForm itemId={id} setReviews={setReviews} />}
+
+      {isAuthenticated && (
+        <ReviewForm itemId={item.id} setReviews={setReviews} />
+      )}
     </div>
   );
 };

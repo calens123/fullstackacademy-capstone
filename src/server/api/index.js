@@ -91,12 +91,37 @@ router.post("/auth/login", async (req, res, next) => {
 });
 
 // Route: Get all items
+// Fetch Items with Pagination
 router.get("/items", async (req, res, next) => {
+  const { limit = 10, page = 1 } = req.query; // Default: 10 items per page, page 1
+
+  const offset = (page - 1) * limit;
+
   try {
-    const { rows: items } = await client.query("SELECT * FROM items");
-    res.send(items);
+    const { rows: items } = await client.query(
+      `
+      SELECT * FROM items
+      ORDER BY created_at DESC
+      LIMIT $1 OFFSET $2;
+      `,
+      [limit, offset]
+    );
+
+    const {
+      rows: [{ count }],
+    } = await client.query(
+      `
+      SELECT COUNT(*)::int FROM items;
+      `
+    );
+
+    res.send({
+      items,
+      total: count,
+      limit: parseInt(limit),
+      page: parseInt(page),
+    });
   } catch (err) {
-    console.error("Error fetching items", err);
     next(err);
   }
 });
@@ -275,33 +300,42 @@ router.put(
   "/items/:itemId/reviews/:reviewId/comments/:commentId",
   verifyToken,
   async (req, res, next) => {
-    const { commentId } = req.params;
-    const { comment_text } = req.body;
-    const userId = req.user.id;
-
     try {
+      const { commentId } = req.params;
+      const { comment_text } = req.body;
+
+      // Verify the comment belongs to the authenticated user
       const {
         rows: [comment],
-      } = await client.query(
-        `
-      UPDATE comments
-      SET comment_text = $1, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $2 AND user_id = $3
-      RETURNING *;
-      `,
-        [comment_text, commentId, userId]
-      );
+      } = await client.query(`SELECT * FROM comments WHERE id = $1`, [
+        commentId,
+      ]);
 
       if (!comment) {
-        console.error("Not authorized to edit this comment");
-        return res
-          .status(403)
-          .send({ error: "Not authorized to edit this comment" });
+        return res.status(404).send({ error: "Comment not found" });
       }
 
-      res.send(comment);
+      if (comment.user_id !== req.user.id) {
+        return res
+          .status(403)
+          .send({ error: "You do not have permission to edit this comment" });
+      }
+
+      // Update the comment
+      const {
+        rows: [updatedComment],
+      } = await client.query(
+        `
+        UPDATE comments
+        SET comment_text = $1, updated_at = NOW()
+        WHERE id = $2
+        RETURNING *;
+        `,
+        [comment_text, commentId]
+      );
+
+      res.send(updatedComment);
     } catch (err) {
-      console.error("Error editing comment", err);
       next(err);
     }
   }
@@ -335,5 +369,60 @@ router.delete(
     }
   }
 );
+
+// Fetch User's Reviews
+router.get("/users/:userId/reviews", verifyToken, async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    if (req.user.id !== parseInt(userId)) {
+      return res
+        .status(403)
+        .send({ error: "You are not authorized to view these reviews." });
+    }
+
+    const { rows: reviews } = await client.query(
+      `
+      SELECT reviews.id, reviews.review_text, reviews.rating, items.name AS item_name
+      FROM reviews
+      JOIN items ON reviews.item_id = items.id
+      WHERE reviews.user_id = $1
+      `,
+      [userId]
+    );
+
+    res.send(reviews);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Fetch User's Comments
+router.get("/users/:userId/comments", verifyToken, async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    if (req.user.id !== parseInt(userId)) {
+      return res
+        .status(403)
+        .send({ error: "You are not authorized to view these comments." });
+    }
+
+    const { rows: comments } = await client.query(
+      `
+      SELECT comments.id, comments.comment_text, reviews.review_text AS review_text, items.name AS item_name
+      FROM comments
+      JOIN reviews ON comments.review_id = reviews.id
+      JOIN items ON reviews.item_id = items.id
+      WHERE comments.user_id = $1
+      `,
+      [userId]
+    );
+
+    res.send(comments);
+  } catch (err) {
+    next(err);
+  }
+});
 
 module.exports = router;

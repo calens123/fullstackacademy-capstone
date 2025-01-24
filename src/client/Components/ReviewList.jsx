@@ -2,29 +2,19 @@ import React, { useState } from "react";
 import CommentList from "./CommentList";
 
 const ReviewList = ({ reviews, setReviews, itemId, isAuthenticated }) => {
-  const [comments, setComments] = useState({}); // Comments for each review
-  const [editingReviewId, setEditingReviewId] = useState(null); // Track which review is being edited
-  const [updatedReview, setUpdatedReview] = useState({
-    rating: "",
-    review_text: "",
-  }); // Updated review data
+  const [commentsVisibility, setCommentsVisibility] = useState({}); // Track visibility of comments per review
+  const [editReviewId, setEditReviewId] = useState(null); // Track the review being edited
+  const [editReviewText, setEditReviewText] = useState("");
+  const [editReviewRating, setEditReviewRating] = useState("");
 
-  const fetchComments = async (reviewId) => {
-    try {
-      const response = await fetch(
-        `/api/items/${itemId}/reviews/${reviewId}/comments`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch comments");
-      }
-      const commentsData = await response.json();
-      setComments((prev) => ({ ...prev, [reviewId]: commentsData }));
-    } catch (err) {
-      console.error("Error fetching comments:", err);
-    }
+  const toggleComments = (reviewId) => {
+    setCommentsVisibility((prev) => ({
+      ...prev,
+      [reviewId]: !prev[reviewId],
+    }));
   };
 
-  const handleEdit = async (reviewId) => {
+  const handleEditReview = async (reviewId) => {
     const token = sessionStorage.getItem("token");
 
     if (!token) {
@@ -39,50 +29,24 @@ const ReviewList = ({ reviews, setReviews, itemId, isAuthenticated }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(updatedReview),
+        body: JSON.stringify({
+          review_text: editReviewText,
+          rating: editReviewRating,
+        }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error editing review:", errorData);
+        alert("Failed to edit review");
         return;
       }
 
-      const editedReview = await response.json();
+      const updatedReview = await response.json();
       setReviews((prev) =>
-        prev.map((review) => (review.id === reviewId ? editedReview : review))
+        prev.map((review) => (review.id === reviewId ? updatedReview : review))
       );
-      setEditingReviewId(null); // Stop editing
+      setEditReviewId(null); // Exit edit mode
     } catch (err) {
       console.error("Error editing review:", err);
-    }
-  };
-
-  const handleDelete = async (reviewId) => {
-    const token = sessionStorage.getItem("token");
-
-    if (!token) {
-      alert("You must be logged in to delete a review.");
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/items/${itemId}/reviews/${reviewId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error deleting review:", errorData);
-        return;
-      }
-
-      setReviews((prev) => prev.filter((review) => review.id !== reviewId));
-    } catch (err) {
-      console.error("Error deleting review:", err);
     }
   };
 
@@ -90,38 +54,24 @@ const ReviewList = ({ reviews, setReviews, itemId, isAuthenticated }) => {
     <ul>
       {reviews.map((review) => (
         <li key={review.id}>
-          {editingReviewId === review.id ? (
-            <>
-              <label>
-                Rating:
-                <input
-                  type="number"
-                  value={updatedReview.rating}
-                  onChange={(e) =>
-                    setUpdatedReview({
-                      ...updatedReview,
-                      rating: e.target.value,
-                    })
-                  }
-                  min="1"
-                  max="5"
-                />
-              </label>
-              <label>
-                Review Text:
-                <textarea
-                  value={updatedReview.review_text}
-                  onChange={(e) =>
-                    setUpdatedReview({
-                      ...updatedReview,
-                      review_text: e.target.value,
-                    })
-                  }
-                />
-              </label>
-              <button onClick={() => handleEdit(review.id)}>Save</button>
-              <button onClick={() => setEditingReviewId(null)}>Cancel</button>
-            </>
+          {editReviewId === review.id ? (
+            <div>
+              <textarea
+                value={editReviewText}
+                onChange={(e) => setEditReviewText(e.target.value)}
+                placeholder="Edit review text"
+              />
+              <input
+                type="number"
+                value={editReviewRating}
+                onChange={(e) => setEditReviewRating(e.target.value)}
+                min="1"
+                max="5"
+                placeholder="Rating (1-5)"
+              />
+              <button onClick={() => handleEditReview(review.id)}>Save</button>
+              <button onClick={() => setEditReviewId(null)}>Cancel</button>
+            </div>
           ) : (
             <>
               <p>Rating: {review.rating}</p>
@@ -130,32 +80,31 @@ const ReviewList = ({ reviews, setReviews, itemId, isAuthenticated }) => {
                 <>
                   <button
                     onClick={() => {
-                      setEditingReviewId(review.id);
-                      setUpdatedReview({
-                        rating: review.rating,
-                        review_text: review.review_text,
-                      });
+                      setEditReviewId(review.id);
+                      setEditReviewText(review.review_text);
+                      setEditReviewRating(review.rating);
                     }}
                   >
                     Edit
                   </button>
-                  <button onClick={() => handleDelete(review.id)}>
+                  <button onClick={() => alert("Delete functionality here")}>
                     Delete
                   </button>
                 </>
               )}
+              <button onClick={() => toggleComments(review.id)}>
+                {commentsVisibility[review.id]
+                  ? "Hide Comments"
+                  : "Show Comments"}
+              </button>
+              {commentsVisibility[review.id] && (
+                <CommentList
+                  reviewId={review.id}
+                  itemId={itemId}
+                  isAuthenticated={isAuthenticated}
+                />
+              )}
             </>
-          )}
-          <button onClick={() => fetchComments(review.id)}>
-            {comments[review.id] ? "Hide Comments" : "Show Comments"}
-          </button>
-          {comments[review.id] && (
-            <CommentList
-              reviewId={review.id}
-              comments={comments[review.id]}
-              setComments={setComments}
-              itemId={itemId}
-            />
           )}
         </li>
       ))}
