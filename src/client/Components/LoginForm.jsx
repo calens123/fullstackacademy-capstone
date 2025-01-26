@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-const LoginForm = () => {
+const LoginForm = ({ setIsAuthenticated, setCurrentUserId }) => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,13 +18,17 @@ const LoginForm = () => {
       if (!response.ok) {
         const errorData = await response.json();
         setError(errorData.error || "Login failed");
-        console.error("Login failed:", errorData);
         return;
       }
 
-      const { token } = await response.json();
-      sessionStorage.setItem("token", token); // Store JWT in sessionStorage
-      alert("Login successful!");
+      const { token, user } = await response.json();
+      sessionStorage.setItem("token", token);
+
+      setIsAuthenticated(true);
+      setCurrentUserId(user.id);
+
+      // Force a page reload
+      window.location.reload();
     } catch (err) {
       console.error("Error during login:", err);
       setError("An error occurred. Please try again.");

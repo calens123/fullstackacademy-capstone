@@ -1,8 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global adjustments */
 body {
-  font-family: verdana;
+  @apply bg-gray-100 text-gray-800 font-sans;
 }
 
 nav {
-  display: flex;
-  justify-content: space-around;
+  @apply flex justify-around items-center py-4 bg-primary text-white shadow-md;
 }

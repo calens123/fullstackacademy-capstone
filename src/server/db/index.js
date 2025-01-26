@@ -1,5 +1,5 @@
 const client = require("./client");
-const seedData = require("./seed");
+const seedData = require("./archive/seed");
 
 const syncAndSeed = async () => {
   try {

@@ -14,6 +14,7 @@ const App = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sortOrder, setSortOrder] = useState("desc"); // Default to newest first
 
   const handleLogout = () => {
     sessionStorage.removeItem("token");
@@ -43,85 +44,127 @@ const App = () => {
   }, []);
 
   // Fetch items for the homepage
-  useEffect(() => {
-    const fetchItems = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch("/api/items");
-        if (!response.ok) {
-          throw new Error("Failed to fetch items");
-        }
-        const data = await response.json();
-        setItems(data.items || []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const fetchItems = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/items?sort=${sortOrder}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch items");
       }
-    };
+      const data = await response.json();
+      setItems(data.items || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchItems();
-  }, []);
+  }, [sortOrder]);
 
   return (
     <div>
       <h1>40kReviews</h1>
-      <nav>
-        <Link to="/">Home</Link>
-        <Link to="/foo">Foo</Link>
-        <Link to="/bar">Bar</Link>
+      <nav className="flex justify-around items-center py-4 bg-primary text-white shadow-md">
+        <Link to="/foo" className="hover:text-accent">
+          Foo
+        </Link>
+        <Link to="/bar" className="hover:text-accent">
+          Bar
+        </Link>
         {isAuthenticated ? (
           <>
-            <Link to="/dashboard">Dashboard</Link>
-            <button onClick={handleLogout}>Log Out</button>
+            <Link to="/dashboard" className="hover:text-accent">
+              Dashboard
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="bg-accent text-white py-1 px-3 rounded hover:bg-secondary"
+            >
+              Log Out
+            </button>
           </>
         ) : (
           <>
-            <Link to="/sign-in">Sign In</Link>
-            <Link to="/sign-up">Sign Up</Link>
+            <Link to="/sign-in" className="hover:text-accent">
+              Sign In
+            </Link>
+            <Link to="/sign-up" className="hover:text-accent">
+              Sign Up
+            </Link>
           </>
         )}
       </nav>
 
-      {/* Define routes for navigation */}
       <Routes>
-        {/* Homepage */}
         <Route
           path="/"
           element={
             <>
               <h2>Items</h2>
+              <label>
+                Sort by:
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                >
+                  <option value="desc">Newest to Oldest</option>
+                  <option value="asc">Oldest to Newest</option>
+                </select>
+              </label>
               {loading ? (
                 <p>Loading items...</p>
               ) : error ? (
                 <p>Error fetching items: {error}</p>
               ) : (
-                <ul>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
                   {items.map((item) => (
-                    <li key={item.id}>
-                      <h3>
-                        <Link to={`/items/${item.id}`}>{item.name}</Link>
+                    <div
+                      key={item.id}
+                      className="bg-white shadow-lg rounded-lg p-4"
+                    >
+                      <h3 className="text-xl font-bold text-primary mb-2">
+                        <Link
+                          to={`/items/${item.id}`}
+                          className="hover:text-accent"
+                        >
+                          {item.name}
+                        </Link>
                       </h3>
-                      <p>{item.description}</p>
-                    </li>
+                      <p className="text-sm text-gray-600">
+                        {item.description}
+                      </p>
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="object-cover h-48 w-full rounded mt-2"
+                      />
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </>
           }
         />
-
-        {/* Other routes */}
         <Route path="/foo" element={<Foo />} />
         <Route path="/bar" element={<Bar />} />
         <Route
           path="/items/:id"
           element={<ItemDetails isAuthenticated={isAuthenticated} />}
         />
-        <Route path="/sign-in" element={<SignInForm />} />
-        <Route path="/sign-up" element={<SignUpForm />} />
+        <Route
+          path="/sign-in"
+          element={
+            <SignInForm
+              setIsAuthenticated={setIsAuthenticated}
+              setCurrentUserId={setCurrentUserId}
+            />
+          }
+        />
 
-        {/* Dashboard */}
+        <Route path="/sign-up" element={<SignUpForm />} />
         {isAuthenticated && (
           <Route
             path="/dashboard"
