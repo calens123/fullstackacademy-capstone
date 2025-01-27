@@ -10,3 +10,61 @@ body {
 nav {
   @apply flex justify-around items-center py-4 bg-primary text-white shadow-md;
 }
+
+/* Global grid styling for item list */
+.item-grid {
+  @apply grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4;
+}
+
+/* Individual item card styling */
+.item-card {
+  @apply bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-4;
+}
+
+/* Item thumbnail styling */
+.item-thumbnail {
+  @apply w-full h-36 object-cover rounded-md mb-2;
+}
+
+/* Item title */
+.item-title {
+  @apply text-lg font-bold text-gray-800;
+}
+
+/* Item description */
+.item-description {
+  @apply text-sm text-gray-600;
+}
+
+/* View Details link */
+.view-details {
+  @apply block text-center mt-2 text-primary hover:underline;
+}
+
+/* Buttons */
+button {
+  @apply bg-primary text-white rounded-md py-2 px-4 m-2 hover:bg-primary-dark transition-colors;
+}
+
+button + button {
+  @apply ml-2;
+}
+
+/* Review Text */
+.review-text {
+  @apply text-gray-700 mb-2;
+}
+
+/* Review Options */
+.review-options {
+  @apply flex items-center space-x-4 mt-2;
+}
+
+.comment-options {
+  @apply flex items-center space-x-4 mt-2;
+}
+
+/* General Container */
+.container {
+  @apply p-4 bg-white rounded-lg shadow-lg mb-4;
+}

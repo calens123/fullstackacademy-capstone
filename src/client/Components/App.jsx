@@ -66,37 +66,46 @@ const App = () => {
 
   return (
     <div>
-      <h1>40kReviews</h1>
-      <nav className="flex justify-around items-center py-4 bg-primary text-white shadow-md">
-        <Link to="/foo" className="hover:text-accent">
-          Foo
-        </Link>
-        <Link to="/bar" className="hover:text-accent">
-          Bar
-        </Link>
-        {isAuthenticated ? (
-          <>
-            <Link to="/dashboard" className="hover:text-accent">
-              Dashboard
+      <div className="bg-primary text-white shadow-md py-4">
+        <div className="container mx-auto flex justify-between items-center px-6">
+          <Link
+            to="/"
+            className="text-4xl font-bold text-accent hover:text-accent-light transition duration-300"
+          >
+            40kReviews
+          </Link>
+          <nav className="flex space-x-4">
+            <Link to="/foo" className="hover:underline">
+              Foo
             </Link>
-            <button
-              onClick={handleLogout}
-              className="bg-accent text-white py-1 px-3 rounded hover:bg-secondary"
-            >
-              Log Out
-            </button>
-          </>
-        ) : (
-          <>
-            <Link to="/sign-in" className="hover:text-accent">
-              Sign In
+            <Link to="/bar" className="hover:underline">
+              Bar
             </Link>
-            <Link to="/sign-up" className="hover:text-accent">
-              Sign Up
-            </Link>
-          </>
-        )}
-      </nav>
+            {isAuthenticated ? (
+              <>
+                <Link to="/dashboard" className="hover:underline">
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="hover:underline bg-secondary px-4 py-2 rounded-md text-white"
+                >
+                  Log Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/sign-in" className="hover:underline">
+                  Sign In
+                </Link>
+                <Link to="/sign-up" className="hover:underline">
+                  Sign Up
+                </Link>
+              </>
+            )}
+          </nav>
+        </div>
+      </div>
 
       <Routes>
         <Route
@@ -119,13 +128,15 @@ const App = () => {
               ) : error ? (
                 <p>Error fetching items: {error}</p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                <ul className="item-grid">
                   {items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="bg-white shadow-lg rounded-lg p-4"
-                    >
-                      <h3 className="text-xl font-bold text-primary mb-2">
+                    <li key={item.id} className="item-card">
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="item-thumbnail"
+                      />
+                      <h3 className="item-title">
                         <Link
                           to={`/items/${item.id}`}
                           className="hover:text-accent"
@@ -133,17 +144,10 @@ const App = () => {
                           {item.name}
                         </Link>
                       </h3>
-                      <p className="text-sm text-gray-600">
-                        {item.description}
-                      </p>
-                      <img
-                        src={item.image_url}
-                        alt={item.name}
-                        className="object-cover h-48 w-full rounded mt-2"
-                      />
-                    </div>
+                      <p className="item-description">{item.description}</p>
+                    </li>
                   ))}
-                </div>
+                </ul>
               )}
             </>
           }
