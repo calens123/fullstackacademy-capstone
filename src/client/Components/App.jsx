@@ -156,8 +156,14 @@ const App = () => {
         <Route path="/bar" element={<Bar />} />
         <Route
           path="/items/:id"
-          element={<ItemDetails isAuthenticated={isAuthenticated} />}
+          element={
+            <ItemDetails
+              isAuthenticated={isAuthenticated}
+              currentUserId={currentUserId} // ✅ Pass currentUserId
+            />
+          }
         />
+
         <Route
           path="/sign-in"
           element={

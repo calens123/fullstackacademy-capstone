@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from "react";
 
 const Dashboard = ({ userId, isAuthenticated }) => {
-  const [reviews, setReviews] = useState([]); // Initialize as array
-  const [comments, setComments] = useState([]); // Initialize as array
-  const [sortOrder, setSortOrder] = useState("desc"); // Default to newest first
+  const [reviews, setReviews] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [sortOrder, setSortOrder] = useState("desc");
+
+  // State for editing reviews
+  const [editReviewId, setEditReviewId] = useState(null);
+  const [editReviewText, setEditReviewText] = useState("");
+  const [editReviewRating, setEditReviewRating] = useState("");
+
+  // State for editing comments
+  const [editCommentId, setEditCommentId] = useState(null);
+  const [editCommentText, setEditCommentText] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -12,11 +21,7 @@ const Dashboard = ({ userId, isAuthenticated }) => {
         // Fetch user reviews
         const reviewsResponse = await fetch(
           `/api/users/${userId}/reviews?sort=${sortOrder}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         const reviewsData = await reviewsResponse.json();
         setReviews(reviewsData);
@@ -24,11 +29,7 @@ const Dashboard = ({ userId, isAuthenticated }) => {
         // Fetch user comments
         const commentsResponse = await fetch(
           `/api/users/${userId}/comments?sort=${sortOrder}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         const commentsData = await commentsResponse.json();
         setComments(commentsData);
@@ -40,99 +41,224 @@ const Dashboard = ({ userId, isAuthenticated }) => {
     fetchData();
   }, [userId, sortOrder]);
 
-  const handleDeleteReview = async (reviewId) => {
+  // Handle Deleting a Review
+  const handleDeleteReview = async (reviewId, itemId) => {
     const token = sessionStorage.getItem("token");
     try {
-      await fetch(`/api/items/reviews/${reviewId}`, {
+      const response = await fetch(`/api/items/${itemId}/reviews/${reviewId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      setReviews(reviews.filter((review) => review.id !== reviewId));
+
+      if (response.ok) {
+        setReviews(reviews.filter((review) => review.id !== reviewId));
+      } else {
+        console.error("Failed to delete review.");
+      }
     } catch (err) {
       console.error("Error deleting review:", err);
     }
   };
 
-  const handleDeleteComment = async (commentId) => {
+  // Handle Deleting a Comment
+  const handleDeleteComment = async (commentId, reviewId, itemId) => {
     const token = sessionStorage.getItem("token");
     try {
-      await fetch(`/api/comments/${commentId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setComments(comments.filter((comment) => comment.id !== commentId));
+      const response = await fetch(
+        `/api/items/${itemId}/reviews/${reviewId}/comments/${commentId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.ok) {
+        setComments(comments.filter((comment) => comment.id !== commentId));
+      } else {
+        console.error("Failed to delete comment.");
+      }
     } catch (err) {
       console.error("Error deleting comment:", err);
     }
   };
 
+  // Handle Editing a Review
+  const handleEditReview = async (reviewId, itemId) => {
+    const token = sessionStorage.getItem("token");
+    try {
+      const response = await fetch(`/api/items/${itemId}/reviews/${reviewId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          review_text: editReviewText,
+          rating: editReviewRating,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedReview = await response.json();
+        setReviews(reviews.map((r) => (r.id === reviewId ? updatedReview : r)));
+        setEditReviewId(null);
+        setEditReviewText("");
+        setEditReviewRating("");
+      } else {
+        console.error("Failed to edit review.");
+      }
+    } catch (err) {
+      console.error("Error editing review:", err);
+    }
+  };
+
+  // Handle Editing a Comment
+  const handleEditComment = async (commentId, reviewId, itemId) => {
+    const token = sessionStorage.getItem("token");
+    try {
+      const response = await fetch(
+        `/api/items/${itemId}/reviews/${reviewId}/comments/${commentId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ comment_text: editCommentText }),
+        }
+      );
+
+      if (response.ok) {
+        const updatedComment = await response.json();
+        setComments(
+          comments.map((c) => (c.id === commentId ? updatedComment : c))
+        );
+        setEditCommentId(null);
+        setEditCommentText("");
+      } else {
+        console.error("Failed to edit comment.");
+      }
+    } catch (err) {
+      console.error("Error editing comment:", err);
+    }
+  };
+
   return (
-    <div className="bg-gray-100 min-h-screen p-6">
-      <h1 className="text-primary text-4xl font-bold mb-6">My Dashboard</h1>
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold text-accent mb-4">My Dashboard</h1>
 
       {/* Sorting Controls */}
-      <div className="mb-6">
-        <label className="block text-gray-700 text-lg mb-2">Sort by:</label>
+      <label className="block mb-4">
+        Sort by:
         <select
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
-          className="px-4 py-2 border rounded-md"
+          className="ml-2 p-2 border rounded-md bg-gray-700 text-white"
         >
           <option value="desc">Newest to Oldest</option>
           <option value="asc">Oldest to Newest</option>
         </select>
-      </div>
+      </label>
 
       {/* Reviews Section */}
-      <h2 className="text-2xl font-semibold text-primary mb-4">My Reviews</h2>
+      <h2 className="text-2xl font-bold text-blue-400 mt-6">My Reviews</h2>
       {reviews.length === 0 ? (
-        <p className="text-gray-600">No reviews yet.</p>
+        <p>No reviews yet.</p>
       ) : (
-        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ul className="space-y-4">
           {reviews.map((review) => (
-            <li
-              key={review.id}
-              className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
-            >
+            <li key={review.id} className="bg-gray-800 p-4 rounded-md">
               <h3 className="text-lg font-semibold">{review.item_name}</h3>
-              <p className="text-gray-700">Rating: {review.rating}</p>
-              <p className="text-gray-600">{review.review_text}</p>
-              <button
-                onClick={() => handleDeleteReview(review.id)}
-                className="mt-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
+              <p>Rating: {review.rating}</p>
+              <p>{review.review_text}</p>
+
+              {/* Edit Review */}
+              {editReviewId === review.id ? (
+                <div className="mt-2">
+                  <input
+                    type="number"
+                    value={editReviewRating}
+                    onChange={(e) => setEditReviewRating(e.target.value)}
+                    className="p-2 border rounded-md bg-gray-700 text-white"
+                  />
+                  <textarea
+                    value={editReviewText}
+                    onChange={(e) => setEditReviewText(e.target.value)}
+                    className="p-2 border rounded-md w-full bg-gray-700 text-white"
+                  />
+                  <button
+                    onClick={() => handleEditReview(review.id, review.item_id)}
+                  >
+                    Save
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button onClick={() => setEditReviewId(review.id)}>
+                    Edit
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleDeleteReview(review.id, review.item_id)
+                    }
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
             </li>
           ))}
         </ul>
       )}
 
       {/* Comments Section */}
-      <h2 className="text-2xl font-semibold text-primary mt-8 mb-4">
-        My Comments
-      </h2>
+      <h2 className="text-2xl font-bold text-blue-400 mt-6">My Comments</h2>
       {comments.length === 0 ? (
-        <p className="text-gray-600">No comments yet.</p>
+        <p>No comments yet.</p>
       ) : (
-        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ul className="space-y-4">
           {comments.map((comment) => (
-            <li
-              key={comment.id}
-              className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
-            >
+            <li key={comment.id} className="bg-gray-800 p-4 rounded-md">
               <h3 className="text-lg font-semibold">{comment.item_name}</h3>
-              <p className="text-gray-600">{comment.comment_text}</p>
-              <button
-                onClick={() => handleDeleteComment(comment.id)}
-                className="mt-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
+              <p>Comment: {comment.comment_text}</p>
+
+              {editCommentId === comment.id ? (
+                <div className="mt-2">
+                  <textarea
+                    value={editCommentText}
+                    onChange={(e) => setEditCommentText(e.target.value)}
+                    className="p-2 border rounded-md w-full bg-gray-700 text-white"
+                  />
+                  <button
+                    onClick={() =>
+                      handleEditComment(
+                        comment.id,
+                        comment.review_id,
+                        comment.item_id
+                      )
+                    }
+                  >
+                    Save
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button onClick={() => setEditCommentId(comment.id)}>
+                    Edit
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleDeleteComment(
+                        comment.id,
+                        comment.review_id,
+                        comment.item_id
+                      )
+                    }
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
             </li>
           ))}
         </ul>
